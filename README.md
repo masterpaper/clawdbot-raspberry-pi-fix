@@ -296,6 +296,69 @@ Make it executable: `chmod +x ~/fix-clawdbot-arm.sh`
 
 ---
 
+---
+
+## Known Issue: Cross-Chat Crashes (Workaround)
+
+On Raspberry Pi, Clawdbot may crash when handling messages from multiple users simultaneously (e.g., messaging someone via Telegram while also chatting with you). This appears to be a resource/timing issue on low-powered devices.
+
+### The Workaround: Watchdog Script
+
+Since the agent can't monitor itself (it's dead when it crashes), we run a watchdog from your main user account (e.g., `pi`) that automatically restarts Clawdbot when it detects a crash.
+
+### Installation
+
+1. **Copy the scripts to your Pi:**
+
+```bash
+# Copy watchdog to system location
+sudo cp clawdbot-watchdog.sh /usr/local/bin/clawdbot-watchdog
+sudo chmod +x /usr/local/bin/clawdbot-watchdog
+
+# Run the setup script as your main user (e.g., pi)
+bash setup-clawd-commands.sh
+source ~/.bashrc
+```
+
+2. **Clear any old log files (if permission issues occur):**
+
+```bash
+sudo rm -f /tmp/clawdbot-watchdog.log
+```
+
+### Usage
+
+After setup, you'll have these commands:
+
+| Command | Description |
+|---------|-------------|
+| `start clawd` | Start Clawdbot |
+| `stop clawd` | Stop Clawdbot (watchdog won't restart it) |
+| `restart clawd` | Restart Clawdbot |
+| `status clawd` | Show Clawdbot status with process info |
+| `start dog` | Start the watchdog (auto-restarts Clawdbot on crash) |
+| `stop dog` | Stop the watchdog |
+| `status dog` | Check if watchdog is running |
+
+### How It Works
+
+- **Watchdog running + Clawdbot crashes** → Watchdog restarts it within 30 seconds
+- **You run `stop clawd`** → Creates a lock file, watchdog respects it and won't restart
+- **You run `start clawd` or `restart clawd`** → Removes lock file, watchdog protection resumes
+
+### Recommended Setup
+
+For a Pi that should stay running:
+
+```bash
+start clawd    # Start the bot
+start dog      # Start the watchdog
+```
+
+Now if Clawdbot crashes (from cross-chat or anything else), the watchdog brings it back automatically.
+
+---
+
 ## Tested On
 
 - **Device:** Raspberry Pi 3B
